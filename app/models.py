@@ -62,7 +62,7 @@ class Item(db.Model):
 class Column(db.Model):
     __tablename__ = 'columns'
 
-    VALID_TYPES = ('status', 'person', 'date', 'priority')
+    VALID_TYPES = ('status', 'person', 'date', 'priority', 'text', 'number')
 
     id = db.Column(db.Integer, primary_key=True)
     board_id = db.Column(db.Integer, db.ForeignKey('boards.id'), nullable=False)

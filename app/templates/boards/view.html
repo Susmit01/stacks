@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ board.name }} — WorkWeek{% endblock %}
+{% block title %}{{ board.name }} — Stacks{% endblock %}
 
 {% block content %}
 <div x-data="{
@@ -7,11 +7,27 @@
        showAddCol: false,
        newColName: '',
        newColType: 'status',
+       selectedItems: [],
+       allItemIds: [{{ board.items | map(attribute='id') | join(', ') }}],
        async addColumn() {
          const name = this.newColName.trim()
          if (!name) return
          const r = await apiFetch('/boards/{{ board.id }}/columns', 'POST', { name, type: this.newColType })
          if (r.ok) { this.showAddCol = false; this.newColName = ''; window.location.reload() }
+       },
+       toggleItem(id) {
+         const idx = this.selectedItems.indexOf(id)
+         if (idx === -1) this.selectedItems.push(id)
+         else this.selectedItems.splice(idx, 1)
+       },
+       toggleAll(checked) { this.selectedItems = checked ? [...this.allItemIds] : [] },
+       isSelected(id) { return this.selectedItems.includes(id) },
+       async deleteSelected() {
+         if (!this.selectedItems.length) return
+         const n = this.selectedItems.length
+         if (!confirm(`Delete ${n} item${n !== 1 ? 's' : ''}?`)) return
+         const r = await apiFetch('/boards/{{ board.id }}/items/bulk-delete', 'POST', { item_ids: this.selectedItems })
+         if (r.ok) window.location.reload()
        }
      }"
      @cell-saved.window="toast = true; setTimeout(() => toast = false, 1800)">
@@ -75,6 +91,22 @@
     </div>
   </div>
 
+  {# ── Bulk action bar ── #}
+  <div x-show="selectedItems.length > 0" x-transition
+       class="px-8 py-3 border-b border-gray-200 flex items-center gap-4"
+       style="background-color:#fff0f3; display:none;">
+    <span class="text-sm font-medium text-gray-700"
+          x-text="`${selectedItems.length} item${selectedItems.length !== 1 ? 's' : ''} selected`"></span>
+    <button @click="deleteSelected()"
+      class="text-sm font-semibold text-white px-3 py-1.5 rounded-lg transition-colors"
+      style="background-color:#ff1d58;" onmouseover="this.style.backgroundColor='#e0164e'" onmouseout="this.style.backgroundColor='#ff1d58'">
+      Delete selected
+    </button>
+    <button @click="selectedItems = []" class="text-sm text-gray-500 hover:text-gray-700 transition-colors">
+      Clear selection
+    </button>
+  </div>
+
   {# ── Table area ── #}
   <div class="overflow-x-auto">
     <div class="min-w-max">
@@ -83,7 +115,14 @@
         {# Header row #}
         <thead>
           <tr id="col-headers" class="border-b-2 border-gray-200 bg-gray-50">
-            <th class="no-drag text-left px-4 py-3 w-72 sticky left-0 z-20 bg-gray-50">
+            <th class="no-drag sticky left-0 z-20 bg-gray-50 w-10 px-3 py-3">
+              <input type="checkbox"
+                     :checked="allItemIds.length > 0 && selectedItems.length === allItemIds.length"
+                     x-effect="$el.indeterminate = selectedItems.length > 0 && selectedItems.length < allItemIds.length"
+                     @change="toggleAll($event.target.checked)"
+                     class="cursor-pointer rounded border-gray-300 focus:ring-brutal-blue">
+            </th>
+            <th class="no-drag text-left px-4 py-3 w-72 sticky left-10 z-20 bg-gray-50">
               <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Item</span>
             </th>
 
@@ -135,8 +174,16 @@
           {% for item in board.items %}
           <tr class="border-b border-gray-200 hover:bg-rose-50/50 group/row transition-colors">
 
+            {# Select checkbox #}
+            <td class="sticky left-0 z-10 bg-white group-hover/row:bg-rose-50/50 w-10 px-3 py-1.5 transition-colors">
+              <input type="checkbox"
+                     :checked="isSelected({{ item.id }})"
+                     @change="toggleItem({{ item.id }})"
+                     class="cursor-pointer rounded border-gray-300 focus:ring-brutal-blue">
+            </td>
+
             {# Item name — inline editable #}
-            <td class="col-name px-4 py-1.5 sticky left-0 bg-white group-hover/row:bg-rose-50/50 z-10 transition-colors"
+            <td class="col-name px-4 py-1.5 sticky left-10 bg-white group-hover/row:bg-rose-50/50 z-10 transition-colors"
                 x-data='nameCell({ boardId: {{ board.id }}, itemId: {{ item.id }}, val: {{ item.name | tojson }} })'>
               <div x-show="!editing" @click="startEdit()"
                    class="cursor-text text-gray-900 font-medium py-1 min-h-[1.75rem] flex items-center"
@@ -196,15 +243,36 @@
                      @change="save()" @blur="editing = false"
                      class="text-xs border border-[#0049b7] rounded px-1 py-1 focus:outline-none w-full bg-white">
 
-              {% else %}{# person #}
+              {% elif col.col_type == 'person' %}
               x-data='textCell({ boardId: {{ board.id }}, itemId: {{ item.id }}, colId: {{ col.id }}, val: {{ cv | tojson }} })'>
               <div x-show="!editing" @click="startEdit()" class="cursor-pointer py-1">
-                <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold"
-                     :class="val ? 'text-white' : 'border-2 border-dashed border-gray-300'"
-                     :style="val ? `background-color: ${avatarColor(val)}` : ''"
-                     :title="val || 'Click to assign'">
-                  <span x-text="initials(val)"></span>
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
+                       :class="val ? 'text-white' : 'border-2 border-dashed border-gray-300'"
+                       :style="val ? `background-color: ${avatarColor(val)}` : ''"
+                       :title="val || 'Click to assign'">
+                    <span x-text="initials(val)"></span>
+                  </div>
+                  <span class="text-xs text-gray-600 truncate max-w-[80px]" x-show="val" x-text="val"></span>
                 </div>
+              </div>
+              <input x-show="editing" x-ref="textInput" type="text" x-model="val"
+                     @blur="save()" @keydown.enter="save()" @keydown.escape="cancel()"
+                     class="text-xs border border-[#0049b7] rounded px-2 py-1 focus:outline-none w-full bg-white">
+
+              {% elif col.col_type == 'number' %}
+              x-data='numberCell({ boardId: {{ board.id }}, itemId: {{ item.id }}, colId: {{ col.id }}, val: {{ cv | tojson }} })'>
+              <div x-show="!editing" @click="startEdit()" class="cursor-pointer py-1 text-right">
+                <span class="text-xs text-gray-600 tabular-nums" x-text="val !== '' ? val : '—'"></span>
+              </div>
+              <input x-show="editing" x-ref="numInput" type="number" x-model="val"
+                     @blur="save()" @keydown.enter="save()" @keydown.escape="cancel()"
+                     class="text-xs border border-[#0049b7] rounded px-2 py-1 focus:outline-none w-full bg-white text-right">
+
+              {% else %}{# text and other #}
+              x-data='textCell({ boardId: {{ board.id }}, itemId: {{ item.id }}, colId: {{ col.id }}, val: {{ cv | tojson }} })'>
+              <div x-show="!editing" @click="startEdit()" class="cursor-text py-1">
+                <span class="text-xs text-gray-600" x-text="val || '—'"></span>
               </div>
               <input x-show="editing" x-ref="textInput" type="text" x-model="val"
                      @blur="save()" @keydown.enter="save()" @keydown.escape="cancel()"
@@ -299,6 +367,8 @@
           <option value="person">Person</option>
           <option value="date">Date</option>
           <option value="priority">Priority</option>
+          <option value="text">Text</option>
+          <option value="number">Number</option>
         </select>
       </div>
 
@@ -367,6 +437,24 @@ function textCell({ boardId, itemId, colId, val }) {
     startEdit() {
       this.orig = this.val; this.editing = true
       this.$nextTick(() => { this.$refs.textInput.select() })
+    },
+    async save() {
+      if (this.val === this.orig) { this.editing = false; return }
+      const r = await apiFetch(`/boards/${boardId}/items/${itemId}/cells/${colId}`, 'PATCH', { value: this.val })
+      if (r.ok) { this.orig = this.val; window.dispatchEvent(new CustomEvent('cell-saved')) }
+      else this.val = this.orig
+      this.editing = false
+    },
+    cancel() { this.val = this.orig; this.editing = false }
+  }
+}
+
+function numberCell({ boardId, itemId, colId, val }) {
+  return {
+    editing: false, val, orig: val,
+    startEdit() {
+      this.orig = this.val; this.editing = true
+      this.$nextTick(() => { try { this.$refs.numInput.select() } catch(e) { this.$refs.numInput.focus() } })
     },
     async save() {
       if (this.val === this.orig) { this.editing = false; return }

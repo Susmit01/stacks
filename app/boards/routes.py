@@ -70,6 +70,7 @@ def add_item(board_id):
         )
         db.session.add(item)
         db.session.commit()
+        flash('Item added.', 'success')
     return redirect(url_for('boards.view_board', board_id=board_id))
 
 
@@ -81,6 +82,21 @@ def delete_item(board_id, item_id):
     db.session.delete(item)
     db.session.commit()
     return redirect(url_for('boards.view_board', board_id=board_id))
+
+
+@boards_bp.route('/boards/<int:board_id>/items/bulk-delete', methods=['POST'])
+@login_required
+def bulk_delete_items(board_id):
+    board = Board.query.filter_by(id=board_id, owner_id=current_user.id).first_or_404()
+    data = request.get_json(silent=True) or {}
+    item_ids = [int(i) for i in data.get('item_ids', []) if str(i).lstrip('-').isdigit()]
+    if item_ids:
+        Item.query.filter(
+            Item.id.in_(item_ids),
+            Item.board_id == board.id
+        ).delete(synchronize_session='fetch')
+        db.session.commit()
+    return jsonify({'ok': True})
 
 
 @boards_bp.route('/boards/<int:board_id>/delete', methods=['POST'])
