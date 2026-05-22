@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}{{ board.name }} — ProjectFlow{% endblock %}
+
+{% block content %}
+<div class="px-8 py-8 max-w-2xl">
+
+  {# Back link #}
+  <a href="{{ url_for('boards.index') }}"
+     class="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 mb-6 transition-colors">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+    </svg>
+    My Boards
+  </a>
+
+  {# Board header #}
+  <div class="flex items-start justify-between mb-8">
+    <div class="flex items-center gap-3">
+      <div class="w-3 h-10 rounded-full flex-shrink-0" style="background-color: {{ board.color }};"></div>
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">{{ board.name }}</h1>
+        <p class="text-xs text-gray-400 mt-0.5">
+          {{ board.items | length }} item{% if board.items | length != 1 %}s{% endif %}
+        </p>
+      </div>
+    </div>
+
+    {# Delete board #}
+    <div x-data="{ confirming: false }">
+      <button x-show="!confirming" @click="confirming = true"
+        class="text-sm text-gray-300 hover:text-red-400 transition-colors mt-1">
+        Delete board
+      </button>
+      <div x-show="confirming" x-transition class="text-right">
+        <p class="text-xs text-gray-500 mb-1">Delete "{{ board.name }}"? This can't be undone.</p>
+        <div class="flex items-center gap-3 justify-end">
+          <form method="POST" action="{{ url_for('boards.delete_board', board_id=board.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit"
+              class="text-sm font-medium text-red-600 hover:text-red-700">Delete</button>
+          </form>
+          <button @click="confirming = false" class="text-sm text-gray-400 hover:text-gray-600">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# Items list #}
+  <div class="space-y-2 mb-4">
+    {% if board.items %}
+    {% for item in board.items %}
+    <div class="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-4 py-3 hover:border-gray-300 transition-colors group">
+      <span class="text-sm text-gray-800">{{ item.name }}</span>
+      <form method="POST"
+            action="{{ url_for('boards.delete_item', board_id=board.id, item_id=item.id) }}"
+            onsubmit="return confirm('Delete this item?')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit"
+          class="text-gray-300 hover:text-red-400 text-lg leading-none opacity-0 group-hover:opacity-100 transition-all ml-4"
+          title="Delete item">
+          &times;
+        </button>
+      </form>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p class="text-sm text-gray-400 text-center py-8">
+      No items yet — add one below.
+    </p>
+    {% endif %}
+  </div>
+
+  {# Add item form #}
+  <form method="POST" action="{{ url_for('boards.add_item', board_id=board.id) }}"
+        class="flex gap-2 mt-2">
+    {{ form.hidden_tag() }}
+    {{ form.name(class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent",
+                 placeholder="Add an item…") }}
+    <button type="submit"
+      class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors whitespace-nowrap">
+      Add item
+    </button>
+  </form>
+
+</div>
+{% endblock %}
