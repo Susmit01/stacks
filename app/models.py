@@ -37,6 +37,11 @@ class Board(db.Model):
         cascade='all, delete-orphan',
         order_by='Item.position'
     )
+    columns = db.relationship(
+        'Column', backref='board', lazy=True,
+        cascade='all, delete-orphan',
+        order_by='Column.position'
+    )
 
 
 class Item(db.Model):
@@ -48,3 +53,38 @@ class Item(db.Model):
     position = db.Column(db.Integer, nullable=False, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    cells = db.relationship(
+        'CellValue', backref='item', lazy=True, cascade='all, delete-orphan'
+    )
+
+
+class Column(db.Model):
+    __tablename__ = 'columns'
+
+    VALID_TYPES = ('status', 'person', 'date', 'priority')
+
+    id = db.Column(db.Integer, primary_key=True)
+    board_id = db.Column(db.Integer, db.ForeignKey('boards.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    col_type = db.Column(db.String(20), nullable=False)
+    position = db.Column(db.Integer, nullable=False, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    cells = db.relationship(
+        'CellValue', backref='column', lazy=True, cascade='all, delete-orphan'
+    )
+
+
+class CellValue(db.Model):
+    __tablename__ = 'cell_values'
+
+    id = db.Column(db.Integer, primary_key=True)
+    item_id = db.Column(db.Integer, db.ForeignKey('items.id'), nullable=False)
+    column_id = db.Column(db.Integer, db.ForeignKey('columns.id'), nullable=False)
+    value = db.Column(db.String(500), nullable=False, default='')
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint('item_id', 'column_id', name='uq_item_column'),
+    )

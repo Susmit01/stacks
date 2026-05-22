@@ -1,86 +1,442 @@
 {% extends "base.html" %}
-{% block title %}{{ board.name }} — ProjectFlow{% endblock %}
+{% block title %}{{ board.name }} — WorkWeek{% endblock %}
 
 {% block content %}
-<div class="px-8 py-8 max-w-2xl">
+<div class="flex flex-col h-full"
+     x-data="{
+       toast: false,
+       showAddCol: false,
+       newColName: '',
+       newColType: 'status',
+       async addColumn() {
+         const name = this.newColName.trim()
+         if (!name) return
+         const r = await apiFetch('/boards/{{ board.id }}/columns', 'POST', { name, type: this.newColType })
+         if (r.ok) { this.showAddCol = false; this.newColName = ''; window.location.reload() }
+       }
+     }"
+     @cell-saved.window="toast = true; setTimeout(() => toast = false, 1800)">
 
-  {# Back link #}
-  <a href="{{ url_for('boards.index') }}"
-     class="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 mb-6 transition-colors">
-    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-    </svg>
-    My Boards
-  </a>
-
-  {# Board header #}
-  <div class="flex items-start justify-between mb-8">
+  {# ── Board header ── #}
+  <div class="px-8 py-4 border-b border-gray-200 bg-white flex items-center justify-between flex-shrink-0">
     <div class="flex items-center gap-3">
-      <div class="w-3 h-10 rounded-full flex-shrink-0" style="background-color: {{ board.color }};"></div>
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900">{{ board.name }}</h1>
-        <p class="text-xs text-gray-400 mt-0.5">
+      <a href="{{ url_for('boards.index') }}"
+         class="text-gray-400 hover:text-gray-600 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+      </a>
+      <div class="flex items-center gap-2">
+        <div class="w-2.5 h-6 rounded-sm flex-shrink-0" style="background-color: {{ board.color }};"></div>
+        <h1 class="text-xl font-bold text-gray-900">{{ board.name }}</h1>
+        <span class="text-sm text-gray-400 font-normal">
           {{ board.items | length }} item{% if board.items | length != 1 %}s{% endif %}
-        </p>
+        </span>
       </div>
     </div>
-
-    {# Delete board #}
     <div x-data="{ confirming: false }">
       <button x-show="!confirming" @click="confirming = true"
-        class="text-sm text-gray-300 hover:text-red-400 transition-colors mt-1">
+        class="text-sm text-gray-300 hover:text-red-400 transition-colors">
         Delete board
       </button>
-      <div x-show="confirming" x-transition class="text-right">
-        <p class="text-xs text-gray-500 mb-1">Delete "{{ board.name }}"? This can't be undone.</p>
-        <div class="flex items-center gap-3 justify-end">
-          <form method="POST" action="{{ url_for('boards.delete_board', board_id=board.id) }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit"
-              class="text-sm font-medium text-red-600 hover:text-red-700">Delete</button>
-          </form>
-          <button @click="confirming = false" class="text-sm text-gray-400 hover:text-gray-600">Cancel</button>
-        </div>
+      <div x-show="confirming" x-transition class="flex items-center gap-3">
+        <span class="text-xs text-gray-500">Delete "{{ board.name }}"?</span>
+        <form method="POST" action="{{ url_for('boards.delete_board', board_id=board.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-700">Delete</button>
+        </form>
+        <button @click="confirming = false" class="text-sm text-gray-400 hover:text-gray-600">Cancel</button>
       </div>
     </div>
   </div>
 
-  {# Items list #}
-  <div class="space-y-2 mb-4">
-    {% if board.items %}
-    {% for item in board.items %}
-    <div class="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-4 py-3 hover:border-gray-300 transition-colors group">
-      <span class="text-sm text-gray-800">{{ item.name }}</span>
-      <form method="POST"
-            action="{{ url_for('boards.delete_item', board_id=board.id, item_id=item.id) }}"
-            onsubmit="return confirm('Delete this item?')">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {# ── Table area ── #}
+  <div class="flex-1 overflow-auto">
+    <div class="min-w-max">
+      <table class="border-collapse text-sm" style="width: 100%;" id="board-table">
+
+        {# Header row #}
+        <thead>
+          <tr id="col-headers" class="border-b-2 border-gray-200 bg-gray-50">
+            <th class="no-drag text-left px-4 py-3 w-72 sticky left-0 z-20 bg-gray-50">
+              <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Item</span>
+            </th>
+
+            {% for col in columns %}
+            <th data-col-id="{{ col.id }}"
+                class="text-left px-3 py-2 min-w-[160px] group/hdr"
+                x-data="colHeader({ boardId: {{ board.id }}, colId: {{ col.id }}, name: {{ col.name | tojson }} })">
+              <div class="flex items-center gap-1.5">
+                <span class="col-drag-handle cursor-grab text-gray-300 hover:text-gray-400 flex-shrink-0 select-none" title="Drag to reorder">
+                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 16 16">
+                    <circle cx="5" cy="4" r="1.2"/><circle cx="11" cy="4" r="1.2"/>
+                    <circle cx="5" cy="8" r="1.2"/><circle cx="11" cy="8" r="1.2"/>
+                    <circle cx="5" cy="12" r="1.2"/><circle cx="11" cy="12" r="1.2"/>
+                  </svg>
+                </span>
+                <span x-show="!editing" @dblclick="startEdit()"
+                      class="flex-1 text-xs font-semibold text-gray-400 uppercase tracking-wider truncate cursor-default select-none"
+                      :title="'Double-click to rename'"
+                      x-text="name"></span>
+                <input x-show="editing" x-ref="nameInput" x-model="name"
+                       @blur="saveName()" @keydown.enter="saveName()" @keydown.escape="cancelEdit()"
+                       class="flex-1 text-xs font-semibold uppercase tracking-wider border border-indigo-400 rounded px-1 py-0.5 focus:outline-none min-w-0 w-24 bg-white">
+                <button @click="deleteCol()"
+                  class="opacity-0 group-hover/hdr:opacity-100 flex-shrink-0 text-gray-300 hover:text-red-400 transition-all"
+                  title="Delete column">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            </th>
+            {% endfor %}
+
+            <th class="no-drag px-4 py-3 min-w-[140px] bg-gray-50">
+              <button @click="showAddCol = true"
+                class="flex items-center gap-1 text-xs font-medium text-gray-400 hover:text-indigo-600 transition-colors whitespace-nowrap">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Add column
+              </button>
+            </th>
+            <th class="no-drag w-10 bg-gray-50"></th>
+          </tr>
+        </thead>
+
+        {# Item rows #}
+        <tbody id="item-rows">
+          {% for item in board.items %}
+          <tr class="border-b border-gray-100 hover:bg-indigo-50/30 group/row transition-colors">
+
+            {# Item name — inline editable #}
+            <td class="col-name px-4 py-1.5 sticky left-0 bg-white group-hover/row:bg-indigo-50/30 z-10 transition-colors"
+                x-data="nameCell({ boardId: {{ board.id }}, itemId: {{ item.id }}, val: {{ item.name | tojson }} })">
+              <div x-show="!editing" @click="startEdit()"
+                   class="cursor-text text-gray-900 font-medium py-1 min-h-[1.75rem] flex items-center"
+                   x-text="val"></div>
+              <input x-show="editing" x-ref="nameInput" x-model="val"
+                     @blur="save()" @keydown.enter="save()" @keydown.escape="cancel()"
+                     class="w-full font-medium border border-indigo-400 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-400 bg-white">
+            </td>
+
+            {# Custom column cells #}
+            {% for col in columns %}
+            {% set cv = cells.get(item.id, {}).get(col.id, '') %}
+            <td data-col-id="{{ col.id }}" class="px-3 py-1.5 min-w-[160px]"
+
+              {% if col.col_type == 'status' %}
+              x-data="statusCell({ boardId: {{ board.id }}, itemId: {{ item.id }}, colId: {{ col.id }}, val: {{ cv | tojson }} })">
+              <div x-show="!editing" @click="startEdit()" class="cursor-pointer py-0.5">
+                <span :class="labelClass(val)" class="inline-flex items-center justify-center px-2.5 py-0.5 rounded text-xs font-medium w-28 text-center">
+                  <span x-text="val || '—'"></span>
+                </span>
+              </div>
+              <div x-show="editing">
+                <select x-ref="sel" x-model="val" @change="save()" @blur="editing = false"
+                        class="text-xs border border-indigo-400 rounded px-1 py-1 focus:outline-none w-full bg-white">
+                  <option value="">—</option>
+                  <option>Not started</option>
+                  <option>Working on it</option>
+                  <option>Stuck</option>
+                  <option>Done</option>
+                </select>
+              </div>
+
+              {% elif col.col_type == 'priority' %}
+              x-data="priorityCell({ boardId: {{ board.id }}, itemId: {{ item.id }}, colId: {{ col.id }}, val: {{ cv | tojson }} })">
+              <div x-show="!editing" @click="startEdit()" class="cursor-pointer py-0.5">
+                <span :class="labelClass(val)" class="inline-flex items-center justify-center px-2.5 py-0.5 rounded text-xs font-medium w-20 text-center">
+                  <span x-text="val || '—'"></span>
+                </span>
+              </div>
+              <div x-show="editing">
+                <select x-ref="sel" x-model="val" @change="save()" @blur="editing = false"
+                        class="text-xs border border-indigo-400 rounded px-1 py-1 focus:outline-none w-full bg-white">
+                  <option value="">—</option>
+                  <option>Low</option>
+                  <option>Medium</option>
+                  <option>High</option>
+                  <option>Critical</option>
+                </select>
+              </div>
+
+              {% elif col.col_type == 'date' %}
+              x-data="dateCell({ boardId: {{ board.id }}, itemId: {{ item.id }}, colId: {{ col.id }}, val: {{ cv | tojson }} })">
+              <div x-show="!editing" @click="startEdit()" class="cursor-pointer py-1">
+                <span class="text-xs text-gray-600" x-text="val ? formatDate(val) : '—'"></span>
+              </div>
+              <input x-show="editing" x-ref="dateInput" type="date" x-model="val"
+                     @change="save()" @blur="editing = false"
+                     class="text-xs border border-indigo-400 rounded px-1 py-1 focus:outline-none w-full bg-white">
+
+              {% else %}{# person #}
+              x-data="textCell({ boardId: {{ board.id }}, itemId: {{ item.id }}, colId: {{ col.id }}, val: {{ cv | tojson }} })">
+              <div x-show="!editing" @click="startEdit()" class="cursor-text py-1">
+                <span class="text-xs text-gray-600" x-text="val || '—'"></span>
+              </div>
+              <input x-show="editing" x-ref="textInput" type="text" x-model="val"
+                     @blur="save()" @keydown.enter="save()" @keydown.escape="cancel()"
+                     class="text-xs border border-indigo-400 rounded px-2 py-1 focus:outline-none w-full bg-white">
+              {% endif %}
+
+            </td>
+            {% endfor %}
+
+            {# Delete row #}
+            <td class="col-actions w-10 px-2 py-1.5">
+              <form method="POST"
+                    action="{{ url_for('boards.delete_item', board_id=board.id, item_id=item.id) }}"
+                    onsubmit="return confirm('Delete this item?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit"
+                  class="text-gray-300 hover:text-red-400 text-lg leading-none opacity-0 group-hover/row:opacity-100 transition-all"
+                  title="Delete item">&times;</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+
+          {# Empty state #}
+          {% if not board.items %}
+          <tr>
+            <td colspan="{{ columns | length + 3 }}" class="text-center py-12 text-gray-400 text-sm">
+              No items yet. Add one below.
+            </td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+    {# Add item #}
+    <div class="px-8 py-4 border-t border-gray-100 bg-white sticky bottom-0">
+      <form method="POST" action="{{ url_for('boards.add_item', board_id=board.id) }}"
+            class="flex gap-2 max-w-sm">
+        {{ form.hidden_tag() }}
+        {{ form.name(class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500",
+                     placeholder="+ Add item…") }}
         <button type="submit"
-          class="text-gray-300 hover:text-red-400 text-lg leading-none opacity-0 group-hover:opacity-100 transition-all ml-4"
-          title="Delete item">
-          &times;
+          class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors whitespace-nowrap">
+          Add
         </button>
       </form>
     </div>
-    {% endfor %}
-    {% else %}
-    <p class="text-sm text-gray-400 text-center py-8">
-      No items yet — add one below.
-    </p>
-    {% endif %}
   </div>
 
-  {# Add item form #}
-  <form method="POST" action="{{ url_for('boards.add_item', board_id=board.id) }}"
-        class="flex gap-2 mt-2">
-    {{ form.hidden_tag() }}
-    {{ form.name(class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent",
-                 placeholder="Add an item…") }}
-    <button type="submit"
-      class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors whitespace-nowrap">
-      Add item
-    </button>
-  </form>
+  {# Saved toast #}
+  <div x-show="toast" x-transition:enter="transition ease-out duration-150"
+       x-transition:enter-start="opacity-0 translate-y-2"
+       x-transition:enter-end="opacity-100 translate-y-0"
+       x-transition:leave="transition ease-in duration-150"
+       x-transition:leave-end="opacity-0"
+       class="fixed bottom-6 right-6 bg-gray-900 text-white text-sm px-4 py-2 rounded-lg shadow-lg z-50 flex items-center gap-2"
+       style="display: none;">
+    <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+    </svg>
+    Saved
+  </div>
+
+  {# Add column modal #}
+  <div x-show="showAddCol"
+       x-transition:enter="transition ease-out duration-150"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       class="fixed inset-0 z-50 flex items-center justify-center px-4"
+       @keydown.escape.window="showAddCol = false"
+       style="display: none;">
+    <div class="absolute inset-0 bg-black/40" @click="showAddCol = false"></div>
+    <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" @click.stop
+         x-init="$watch('showAddCol', v => { if (v) $nextTick(() => $el.querySelector('input').focus()) })">
+      <h2 class="text-lg font-semibold text-gray-900 mb-5">Add column</h2>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Column name</label>
+        <input x-model="newColName" type="text" placeholder="e.g. Status"
+               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+               @keydown.enter="addColumn()">
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+        <select x-model="newColType"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+          <option value="status">Status</option>
+          <option value="person">Person</option>
+          <option value="date">Date</option>
+          <option value="priority">Priority</option>
+        </select>
+      </div>
+
+      <div class="flex gap-3 justify-end">
+        <button @click="showAddCol = false; newColName = ''"
+          class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 rounded-lg hover:bg-gray-100 transition-colors">
+          Cancel
+        </button>
+        <button @click="addColumn()"
+          class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors">
+          Add column
+        </button>
+      </div>
+    </div>
+  </div>
 
 </div>
+
+{# ── SortableJS + Alpine component definitions ── #}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+const CSRF = () => document.querySelector('meta[name="csrf-token"]').content
+
+async function apiFetch(url, method, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF() } }
+  if (body !== undefined) opts.body = JSON.stringify(body)
+  return fetch(url, opts)
+}
+
+function nameCell({ boardId, itemId, val }) {
+  return {
+    editing: false, val, orig: val,
+    startEdit() {
+      this.orig = this.val; this.editing = true
+      this.$nextTick(() => { this.$refs.nameInput.select() })
+    },
+    async save() {
+      const v = this.val.trim()
+      if (!v) { this.val = this.orig; this.editing = false; return }
+      if (v === this.orig) { this.editing = false; return }
+      const r = await apiFetch(`/boards/${boardId}/items/${itemId}/name`, 'PATCH', { name: v })
+      if (r.ok) { this.orig = v; window.dispatchEvent(new CustomEvent('cell-saved')) }
+      else this.val = this.orig
+      this.editing = false
+    },
+    cancel() { this.val = this.orig; this.editing = false }
+  }
+}
+
+function textCell({ boardId, itemId, colId, val }) {
+  return {
+    editing: false, val, orig: val,
+    startEdit() {
+      this.orig = this.val; this.editing = true
+      this.$nextTick(() => { this.$refs.textInput.select() })
+    },
+    async save() {
+      if (this.val === this.orig) { this.editing = false; return }
+      const r = await apiFetch(`/boards/${boardId}/items/${itemId}/cells/${colId}`, 'PATCH', { value: this.val })
+      if (r.ok) { this.orig = this.val; window.dispatchEvent(new CustomEvent('cell-saved')) }
+      else this.val = this.orig
+      this.editing = false
+    },
+    cancel() { this.val = this.orig; this.editing = false }
+  }
+}
+
+function statusCell({ boardId, itemId, colId, val }) {
+  return {
+    editing: false, val,
+    startEdit() { this.editing = true; this.$nextTick(() => this.$refs.sel.focus()) },
+    async save() {
+      const r = await apiFetch(`/boards/${boardId}/items/${itemId}/cells/${colId}`, 'PATCH', { value: this.val })
+      if (r.ok) window.dispatchEvent(new CustomEvent('cell-saved'))
+      this.editing = false
+    },
+    labelClass(v) {
+      return { 'Done': 'bg-green-100 text-green-700', 'Working on it': 'bg-blue-100 text-blue-700',
+               'Stuck': 'bg-red-100 text-red-700', 'Not started': 'bg-gray-100 text-gray-600' }[v] || 'bg-gray-50 text-gray-400'
+    }
+  }
+}
+
+function priorityCell({ boardId, itemId, colId, val }) {
+  return {
+    editing: false, val,
+    startEdit() { this.editing = true; this.$nextTick(() => this.$refs.sel.focus()) },
+    async save() {
+      const r = await apiFetch(`/boards/${boardId}/items/${itemId}/cells/${colId}`, 'PATCH', { value: this.val })
+      if (r.ok) window.dispatchEvent(new CustomEvent('cell-saved'))
+      this.editing = false
+    },
+    labelClass(v) {
+      return { 'Low': 'bg-gray-100 text-gray-500', 'Medium': 'bg-yellow-100 text-yellow-700',
+               'High': 'bg-orange-100 text-orange-700', 'Critical': 'bg-red-100 text-red-700' }[v] || 'bg-gray-50 text-gray-400'
+    }
+  }
+}
+
+function dateCell({ boardId, itemId, colId, val }) {
+  return {
+    editing: false, val,
+    startEdit() {
+      this.editing = true
+      this.$nextTick(() => { try { this.$refs.dateInput.showPicker() } catch(e) {} })
+    },
+    async save() {
+      const r = await apiFetch(`/boards/${boardId}/items/${itemId}/cells/${colId}`, 'PATCH', { value: this.val })
+      if (r.ok) window.dispatchEvent(new CustomEvent('cell-saved'))
+      this.editing = false
+    },
+    formatDate(v) {
+      if (!v) return '—'
+      try { return new Date(v + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) }
+      catch { return v }
+    }
+  }
+}
+
+function colHeader({ boardId, colId, name }) {
+  return {
+    editing: false, name, orig: name,
+    startEdit() {
+      this.orig = this.name; this.editing = true
+      this.$nextTick(() => this.$refs.nameInput.select())
+    },
+    async saveName() {
+      const v = this.name.trim()
+      if (!v) { this.name = this.orig; this.editing = false; return }
+      if (v === this.orig) { this.editing = false; return }
+      const r = await apiFetch(`/boards/${boardId}/columns/${colId}/rename`, 'PATCH', { name: v })
+      if (!r.ok) this.name = this.orig
+      this.editing = false
+    },
+    cancelEdit() { this.name = this.orig; this.editing = false },
+    async deleteCol() {
+      if (!confirm(`Delete column "${this.name}"? All values in this column will be lost.`)) return
+      const r = await apiFetch(`/boards/${boardId}/columns/${colId}`, 'DELETE')
+      if (r.ok) window.location.reload()
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  const headerRow = document.getElementById('col-headers')
+  if (!headerRow || typeof Sortable === 'undefined') return
+
+  Sortable.create(headerRow, {
+    animation: 150,
+    handle: '.col-drag-handle',
+    filter: '.no-drag',
+    preventOnFilter: true,
+    onMove(evt) { return !evt.related.classList.contains('no-drag') },
+    async onEnd() {
+      const colHeaders = [...headerRow.querySelectorAll('th[data-col-id]')]
+      const newOrder = colHeaders.map(th => parseInt(th.dataset.colId))
+
+      // Sync body cells to match the new header order
+      document.querySelectorAll('#item-rows tr').forEach(row => {
+        const actionCell = row.querySelector('td.col-actions')
+        if (!actionCell) return
+        newOrder.forEach(colId => {
+          const cell = row.querySelector(`td[data-col-id="${colId}"]`)
+          if (cell) actionCell.before(cell)
+        })
+      })
+
+      await apiFetch('/boards/{{ board.id }}/columns/reorder', 'POST', { order: newOrder })
+    }
+  })
+})
+</script>
 {% endblock %}
