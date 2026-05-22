@@ -3,12 +3,42 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}WorkWeek{% endblock %}</title>
+  <title>{% block title %}Stacks{% endblock %}</title>
   <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --color-yass-queen: #ff1d58;
+      --color-sister-sister: #f75990;
+      --color-crown-yellow: #fff685;
+      --color-blue-light: #00ddff;
+      --color-brutal-blue: #0049b7;
+    }
+  </style>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            'yass-queen':    '#ff1d58',
+            'sister-sister': '#f75990',
+            'crown-yellow':  '#fff685',
+            'blue-light':    '#00ddff',
+            'brutal-blue':   '#0049b7',
+          }
+        }
+      }
+    }
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
 </head>
-<body class="bg-gray-50 text-gray-900 antialiased">
+<body class="bg-gray-50 text-gray-900 antialiased font-sans">
 
 {% if current_user.is_authenticated %}
 {# ─── Authenticated layout: sidebar + main ─── #}
@@ -17,12 +47,19 @@
   {# Sidebar #}
   <aside class="w-60 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
     <div class="px-5 py-4 border-b border-gray-100">
-      <span class="text-lg font-bold tracking-tight text-indigo-600">WorkWeek</span>
+      <a href="{{ url_for('boards.index') }}" class="flex items-center gap-2">
+        {# Stack wordmark: two stacked rectangles #}
+        <div class="flex flex-col gap-0.5 flex-shrink-0">
+          <div class="w-5 h-2 rounded-sm" style="background-color:#ff1d58;"></div>
+          <div class="w-5 h-2 rounded-sm opacity-50" style="background-color:#ff1d58;"></div>
+        </div>
+        <span class="text-lg font-bold tracking-tight" style="color:#ff1d58;">Stacks</span>
+      </a>
     </div>
 
     <nav class="flex-1 px-3 py-4 space-y-1">
       <a href="{{ url_for('boards.index') }}"
-         class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors">
+         class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-yass-queen transition-colors">
         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10-3a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1v-7z"/>
@@ -33,8 +70,8 @@
 
     <div class="px-4 py-4 border-t border-gray-100">
       <div class="flex items-center gap-3 mb-3">
-        <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-          <span class="text-xs font-semibold text-indigo-700">{{ current_user.full_name[0].upper() }}</span>
+        <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style="background-color:#0049b7;">
+          <span class="text-xs font-semibold text-white">{{ current_user.full_name[0].upper() }}</span>
         </div>
         <div class="min-w-0">
           <p class="text-sm font-medium text-gray-900 truncate">{{ current_user.full_name }}</p>
@@ -42,7 +79,7 @@
         </div>
       </div>
       <a href="{{ url_for('auth.logout') }}"
-         class="text-xs text-gray-400 hover:text-red-500 transition-colors flex items-center gap-1">
+         class="text-xs text-gray-400 hover:text-yass-queen transition-colors flex items-center gap-1">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
@@ -76,8 +113,12 @@
 {% else %}
 {# ─── Unauthenticated layout: centred card ─── #}
 <div class="min-h-screen flex flex-col items-center justify-center px-4 py-12">
-  <a href="{{ url_for('auth.login') }}" class="text-2xl font-bold text-indigo-600 mb-8 tracking-tight">
-    WorkWeek
+  <a href="{{ url_for('auth.login') }}" class="flex items-center gap-2 mb-8">
+    <div class="flex flex-col gap-0.5">
+      <div class="w-5 h-2 rounded-sm" style="background-color:#ff1d58;"></div>
+      <div class="w-5 h-2 rounded-sm opacity-50" style="background-color:#ff1d58;"></div>
+    </div>
+    <span class="text-2xl font-bold tracking-tight" style="color:#ff1d58;">Stacks</span>
   </a>
   {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}

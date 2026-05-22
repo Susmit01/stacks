@@ -52,7 +52,7 @@ def seed():
             db.session.add(CellValue(item_id=item.id, column_id=p.id, value=priority))
 
         # ── Board 2: Website Redesign ─────────────────────────────────────────
-        b2 = Board(name='Website Redesign', color='#22c55e', owner_id=demo.id)
+        b2 = Board(name='Corporate Website Redesign Q3', color='#22c55e', owner_id=demo.id)
         db.session.add(b2)
         db.session.flush()
 
@@ -85,7 +85,7 @@ def seed():
             db.session.add(CellValue(item_id=item.id, column_id=d2.id, value=due))
 
         # ── Board 3: Product Launch v2.0 ──────────────────────────────────────
-        b3 = Board(name='Product Launch — v2.0', color='#f97316', owner_id=demo.id)
+        b3 = Board(name='Product Launch — Apex v2.0', color='#f97316', owner_id=demo.id)
         db.session.add(b3)
         db.session.flush()
 

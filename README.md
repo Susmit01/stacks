@@ -1,6 +1,6 @@
-# ProjectFlow
+# Stacks
 
-A Monday.com-style project management app. Stage 1 covers user authentication, boards, and items.
+A Monday.com-style project management app with boards, customisable columns, and inline editing.
 
 **Stack:** Python 3 · Flask · SQLite · SQLAlchemy · Flask-Migrate · Tailwind CSS · Alpine.js
 

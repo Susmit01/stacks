@@ -2,8 +2,7 @@
 {% block title %}{{ board.name }} — WorkWeek{% endblock %}
 
 {% block content %}
-<div class="flex flex-col h-full"
-     x-data="{
+<div x-data="{
        toast: false,
        showAddCol: false,
        newColName: '',
@@ -34,24 +33,50 @@
         </span>
       </div>
     </div>
-    <div x-data="{ confirming: false }">
-      <button x-show="!confirming" @click="confirming = true"
-        class="text-sm text-gray-300 hover:text-red-400 transition-colors">
-        Delete board
+    <div x-data="{ menuOpen: false, confirming: false }" class="relative"
+         @click.outside="menuOpen = false; confirming = false">
+      <button @click="menuOpen = !menuOpen"
+              class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Board options">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+          <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+        </svg>
       </button>
-      <div x-show="confirming" x-transition class="flex items-center gap-3">
-        <span class="text-xs text-gray-500">Delete "{{ board.name }}"?</span>
-        <form method="POST" action="{{ url_for('boards.delete_board', board_id=board.id) }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-700">Delete</button>
-        </form>
-        <button @click="confirming = false" class="text-sm text-gray-400 hover:text-gray-600">Cancel</button>
+      <div x-show="menuOpen" x-transition
+           class="absolute right-0 top-full mt-1 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-50"
+           style="display: none;">
+        <div x-show="!confirming" class="px-1">
+          <button @click="confirming = true"
+                  class="w-full text-left px-3 py-2 text-sm font-medium hover:bg-red-50 rounded-lg flex items-center gap-2 transition-colors"
+                  style="color:#ff1d58;">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+            Delete board
+          </button>
+        </div>
+        <div x-show="confirming" class="px-3 py-2">
+          <p class="text-xs font-medium text-gray-700 mb-1">Delete "{{ board.name }}"?</p>
+          <p class="text-xs text-gray-400 mb-3">All items will be permanently removed.</p>
+          <div class="flex items-center gap-2">
+            <form method="POST" action="{{ url_for('boards.delete_board', board_id=board.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit"
+                class="text-xs font-semibold text-white px-3 py-1.5 rounded-lg transition-colors"
+                style="background-color:#ff1d58;" onmouseover="this.style.backgroundColor='#e0164e'" onmouseout="this.style.backgroundColor='#ff1d58'">
+                Delete
+              </button>
+            </form>
+            <button @click="confirming = false" class="text-xs text-gray-500 hover:text-gray-700">Cancel</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
   {# ── Table area ── #}
-  <div class="flex-1 overflow-auto">
+  <div class="overflow-x-auto">
     <div class="min-w-max">
       <table class="border-collapse text-sm" style="width: 100%;" id="board-table">
 
@@ -65,7 +90,7 @@
             {% for col in columns %}
             <th data-col-id="{{ col.id }}"
                 class="text-left px-3 py-2 min-w-[160px] group/hdr"
-                x-data="colHeader({ boardId: {{ board.id }}, colId: {{ col.id }}, name: {{ col.name | tojson }} })">
+                x-data='colHeader({ boardId: {{ board.id }}, colId: {{ col.id }}, name: {{ col.name | tojson }} })'>
               <div class="flex items-center gap-1.5">
                 <span class="col-drag-handle cursor-grab text-gray-300 hover:text-gray-400 flex-shrink-0 select-none" title="Drag to reorder">
                   <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 16 16">
@@ -80,7 +105,7 @@
                       x-text="name"></span>
                 <input x-show="editing" x-ref="nameInput" x-model="name"
                        @blur="saveName()" @keydown.enter="saveName()" @keydown.escape="cancelEdit()"
-                       class="flex-1 text-xs font-semibold uppercase tracking-wider border border-indigo-400 rounded px-1 py-0.5 focus:outline-none min-w-0 w-24 bg-white">
+                       class="flex-1 text-xs font-semibold uppercase tracking-wider border border-[#0049b7] rounded px-1 py-0.5 focus:outline-none min-w-0 w-24 bg-white">
                 <button @click="deleteCol()"
                   class="opacity-0 group-hover/hdr:opacity-100 flex-shrink-0 text-gray-300 hover:text-red-400 transition-all"
                   title="Delete column">
@@ -94,7 +119,7 @@
 
             <th class="no-drag px-4 py-3 min-w-[140px] bg-gray-50">
               <button @click="showAddCol = true"
-                class="flex items-center gap-1 text-xs font-medium text-gray-400 hover:text-indigo-600 transition-colors whitespace-nowrap">
+                class="flex items-center gap-1 text-xs font-medium text-gray-400 hover:text-brutal-blue transition-colors whitespace-nowrap">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
@@ -108,17 +133,17 @@
         {# Item rows #}
         <tbody id="item-rows">
           {% for item in board.items %}
-          <tr class="border-b border-gray-100 hover:bg-indigo-50/30 group/row transition-colors">
+          <tr class="border-b border-gray-200 hover:bg-rose-50/50 group/row transition-colors">
 
             {# Item name — inline editable #}
-            <td class="col-name px-4 py-1.5 sticky left-0 bg-white group-hover/row:bg-indigo-50/30 z-10 transition-colors"
-                x-data="nameCell({ boardId: {{ board.id }}, itemId: {{ item.id }}, val: {{ item.name | tojson }} })">
+            <td class="col-name px-4 py-1.5 sticky left-0 bg-white group-hover/row:bg-rose-50/50 z-10 transition-colors"
+                x-data='nameCell({ boardId: {{ board.id }}, itemId: {{ item.id }}, val: {{ item.name | tojson }} })'>
               <div x-show="!editing" @click="startEdit()"
                    class="cursor-text text-gray-900 font-medium py-1 min-h-[1.75rem] flex items-center"
                    x-text="val"></div>
               <input x-show="editing" x-ref="nameInput" x-model="val"
                      @blur="save()" @keydown.enter="save()" @keydown.escape="cancel()"
-                     class="w-full font-medium border border-indigo-400 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-400 bg-white">
+                     class="w-full font-medium border border-[#0049b7] rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-brutal-blue bg-white">
             </td>
 
             {# Custom column cells #}
@@ -127,7 +152,7 @@
             <td data-col-id="{{ col.id }}" class="px-3 py-1.5 min-w-[160px]"
 
               {% if col.col_type == 'status' %}
-              x-data="statusCell({ boardId: {{ board.id }}, itemId: {{ item.id }}, colId: {{ col.id }}, val: {{ cv | tojson }} })">
+              x-data='statusCell({ boardId: {{ board.id }}, itemId: {{ item.id }}, colId: {{ col.id }}, val: {{ cv | tojson }} })'>
               <div x-show="!editing" @click="startEdit()" class="cursor-pointer py-0.5">
                 <span :class="labelClass(val)" class="inline-flex items-center justify-center px-2.5 py-0.5 rounded text-xs font-medium w-28 text-center">
                   <span x-text="val || '—'"></span>
@@ -135,7 +160,7 @@
               </div>
               <div x-show="editing">
                 <select x-ref="sel" x-model="val" @change="save()" @blur="editing = false"
-                        class="text-xs border border-indigo-400 rounded px-1 py-1 focus:outline-none w-full bg-white">
+                        class="text-xs border border-[#0049b7] rounded px-1 py-1 focus:outline-none w-full bg-white">
                   <option value="">—</option>
                   <option>Not started</option>
                   <option>Working on it</option>
@@ -145,7 +170,7 @@
               </div>
 
               {% elif col.col_type == 'priority' %}
-              x-data="priorityCell({ boardId: {{ board.id }}, itemId: {{ item.id }}, colId: {{ col.id }}, val: {{ cv | tojson }} })">
+              x-data='priorityCell({ boardId: {{ board.id }}, itemId: {{ item.id }}, colId: {{ col.id }}, val: {{ cv | tojson }} })'>
               <div x-show="!editing" @click="startEdit()" class="cursor-pointer py-0.5">
                 <span :class="labelClass(val)" class="inline-flex items-center justify-center px-2.5 py-0.5 rounded text-xs font-medium w-20 text-center">
                   <span x-text="val || '—'"></span>
@@ -153,7 +178,7 @@
               </div>
               <div x-show="editing">
                 <select x-ref="sel" x-model="val" @change="save()" @blur="editing = false"
-                        class="text-xs border border-indigo-400 rounded px-1 py-1 focus:outline-none w-full bg-white">
+                        class="text-xs border border-[#0049b7] rounded px-1 py-1 focus:outline-none w-full bg-white">
                   <option value="">—</option>
                   <option>Low</option>
                   <option>Medium</option>
@@ -163,22 +188,27 @@
               </div>
 
               {% elif col.col_type == 'date' %}
-              x-data="dateCell({ boardId: {{ board.id }}, itemId: {{ item.id }}, colId: {{ col.id }}, val: {{ cv | tojson }} })">
+              x-data='dateCell({ boardId: {{ board.id }}, itemId: {{ item.id }}, colId: {{ col.id }}, val: {{ cv | tojson }} })'>
               <div x-show="!editing" @click="startEdit()" class="cursor-pointer py-1">
                 <span class="text-xs text-gray-600" x-text="val ? formatDate(val) : '—'"></span>
               </div>
               <input x-show="editing" x-ref="dateInput" type="date" x-model="val"
                      @change="save()" @blur="editing = false"
-                     class="text-xs border border-indigo-400 rounded px-1 py-1 focus:outline-none w-full bg-white">
+                     class="text-xs border border-[#0049b7] rounded px-1 py-1 focus:outline-none w-full bg-white">
 
               {% else %}{# person #}
-              x-data="textCell({ boardId: {{ board.id }}, itemId: {{ item.id }}, colId: {{ col.id }}, val: {{ cv | tojson }} })">
-              <div x-show="!editing" @click="startEdit()" class="cursor-text py-1">
-                <span class="text-xs text-gray-600" x-text="val || '—'"></span>
+              x-data='textCell({ boardId: {{ board.id }}, itemId: {{ item.id }}, colId: {{ col.id }}, val: {{ cv | tojson }} })'>
+              <div x-show="!editing" @click="startEdit()" class="cursor-pointer py-1">
+                <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold"
+                     :class="val ? 'text-white' : 'border-2 border-dashed border-gray-300'"
+                     :style="val ? `background-color: ${avatarColor(val)}` : ''"
+                     :title="val || 'Click to assign'">
+                  <span x-text="initials(val)"></span>
+                </div>
               </div>
               <input x-show="editing" x-ref="textInput" type="text" x-model="val"
                      @blur="save()" @keydown.enter="save()" @keydown.escape="cancel()"
-                     class="text-xs border border-indigo-400 rounded px-2 py-1 focus:outline-none w-full bg-white">
+                     class="text-xs border border-[#0049b7] rounded px-2 py-1 focus:outline-none w-full bg-white">
               {% endif %}
 
             </td>
@@ -201,28 +231,30 @@
           {# Empty state #}
           {% if not board.items %}
           <tr>
-            <td colspan="{{ columns | length + 3 }}" class="text-center py-12 text-gray-400 text-sm">
-              No items yet. Add one below.
+            <td colspan="{{ columns | length + 3 }}" class="text-center py-16">
+              <p class="text-gray-400 text-sm font-medium mb-1">No items yet</p>
+              <p class="text-gray-300 text-xs">Add your first one using the form below.</p>
             </td>
           </tr>
           {% endif %}
         </tbody>
       </table>
     </div>
+  </div>
 
-    {# Add item #}
-    <div class="px-8 py-4 border-t border-gray-100 bg-white sticky bottom-0">
-      <form method="POST" action="{{ url_for('boards.add_item', board_id=board.id) }}"
-            class="flex gap-2 max-w-sm">
-        {{ form.hidden_tag() }}
-        {{ form.name(class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500",
-                     placeholder="+ Add item…") }}
-        <button type="submit"
-          class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors whitespace-nowrap">
-          Add
-        </button>
-      </form>
-    </div>
+  {# Add item #}
+  <div class="px-8 py-4 border-t border-gray-200 bg-white">
+    <form method="POST" action="{{ url_for('boards.add_item', board_id=board.id) }}"
+          class="flex gap-2 max-w-sm">
+      {{ form.hidden_tag() }}
+      {{ form.name(class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brutal-blue",
+                   placeholder="+ Add item…") }}
+      <button type="submit"
+        class="text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors whitespace-nowrap"
+        style="background-color:#0049b7;" onmouseover="this.style.backgroundColor='#003d99'" onmouseout="this.style.backgroundColor='#0049b7'">
+        Add
+      </button>
+    </form>
   </div>
 
   {# Saved toast #}
@@ -250,19 +282,19 @@
     <div class="absolute inset-0 bg-black/40" @click="showAddCol = false"></div>
     <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" @click.stop
          x-init="$watch('showAddCol', v => { if (v) $nextTick(() => $el.querySelector('input').focus()) })">
-      <h2 class="text-lg font-semibold text-gray-900 mb-5">Add column</h2>
+      <h2 class="text-lg font-bold text-gray-900 mb-5">Add column</h2>
 
       <div class="mb-4">
         <label class="block text-sm font-medium text-gray-700 mb-1">Column name</label>
         <input x-model="newColName" type="text" placeholder="e.g. Status"
-               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brutal-blue"
                @keydown.enter="addColumn()">
       </div>
 
       <div class="mb-6">
         <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
         <select x-model="newColType"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brutal-blue bg-white">
           <option value="status">Status</option>
           <option value="person">Person</option>
           <option value="date">Date</option>
@@ -276,7 +308,8 @@
           Cancel
         </button>
         <button @click="addColumn()"
-          class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors">
+          class="px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors"
+          style="background-color:#0049b7;" onmouseover="this.style.backgroundColor='#003d99'" onmouseout="this.style.backgroundColor='#0049b7'">
           Add column
         </button>
       </div>
@@ -288,6 +321,18 @@
 {# ── SortableJS + Alpine component definitions ── #}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
+const AVATAR_COLORS = ['#ff1d58', '#f75990', '#0049b7', '#00ddff', '#7e3b8a', '#00c875', '#fdab3d']
+function avatarColor(name) {
+  if (!name) return '#e5e7eb'
+  const h = [...name].reduce((acc, c) => ((acc << 5) - acc + c.charCodeAt(0)) | 0, 0)
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length]
+}
+function initials(name) {
+  if (!name) return ''
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  return ((parts[0]?.[0] ?? '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase()
+}
+
 const CSRF = () => document.querySelector('meta[name="csrf-token"]').content
 
 async function apiFetch(url, method, body) {
