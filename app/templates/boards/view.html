@@ -281,7 +281,7 @@
             {% endfor %}
 
             <th class="no-drag px-4 py-3 min-w-[140px] bg-gray-50">
-              <button @click="showAddCol = true"
+              <button @click="showAddCol = true; $nextTick(() => $refs.inlineColInput?.focus())"
                 class="flex items-center gap-1 text-xs font-medium text-gray-400 hover:text-brutal-blue transition-colors whitespace-nowrap">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -702,16 +702,8 @@
       </div>
     </div>
 
-    {# Add column #}
+    {# Add column inline form — triggered by the "Add column" button in the table header #}
     <div>
-      <button x-show="!showAddCol"
-              @click="showAddCol = true; $nextTick(() => $refs.inlineColInput?.focus())"
-              class="flex items-center gap-2 text-sm font-medium text-gray-400 hover:text-brutal-blue transition-colors">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-        </svg>
-        Add column
-      </button>
       <div x-show="showAddCol" x-transition
            x-init="$watch('showAddCol', v => { if(v) $nextTick(() => $el.scrollIntoView({behavior:'smooth',block:'nearest'})) })"
            class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 max-w-sm">
