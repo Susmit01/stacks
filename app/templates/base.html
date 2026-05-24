@@ -51,10 +51,31 @@
 
 {% if current_user.is_authenticated %}
 {# ─── Authenticated layout: sidebar + main ─── #}
-<div class="flex h-screen overflow-hidden relative z-10">
+<div class="flex h-screen overflow-hidden relative z-10" x-data="{ sidebarOpen: false }">
+
+  {# Mobile top bar #}
+  <div class="md:hidden fixed top-0 left-0 right-0 h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-50">
+    <a href="{{ url_for('boards.dashboard') }}" class="flex items-center gap-2">
+      <div class="flex flex-col gap-0.5 flex-shrink-0">
+        <div class="w-5 h-2 rounded-sm" style="background-color:#ff1d58;"></div>
+        <div class="w-5 h-2 rounded-sm opacity-50" style="background-color:#ff1d58;"></div>
+      </div>
+      <span class="text-lg font-bold tracking-tight" style="color:#ff1d58;">Stacks</span>
+    </a>
+    <button @click="sidebarOpen = !sidebarOpen" class="p-2 rounded-lg hover:bg-gray-100">
+      <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+      </svg>
+    </button>
+  </div>
+
+  {# Mobile overlay #}
+  <div x-show="sidebarOpen" @click="sidebarOpen = false"
+       class="md:hidden fixed inset-0 bg-black/40 z-40" style="display:none;"></div>
 
   {# Sidebar #}
-  <aside class="w-60 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
+  <aside class="fixed md:static inset-y-0 left-0 z-50 w-60 bg-white border-r border-gray-200 flex flex-col flex-shrink-0 transition-transform duration-200"
+         :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'">
     <div class="px-5 py-4 border-b border-gray-100">
       <a href="{{ url_for('boards.dashboard') }}" class="flex items-center gap-2">
         <div class="flex flex-col gap-0.5 flex-shrink-0">
@@ -118,7 +139,7 @@
   </aside>
 
   {# Main #}
-  <main class="flex-1 overflow-y-auto">
+  <main class="flex-1 overflow-y-auto pt-14 md:pt-0">
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       {# Banner messages (error / info) #}
@@ -161,11 +182,11 @@
 </div>
 
 {% else %}
-{# ─── Unauthenticated layout: two-column, both panes locked to viewport height ─── #}
-<div class="h-screen flex overflow-hidden relative z-10">
+{# ─── Unauthenticated layout: single column mobile, two-column desktop ─── #}
+<div class="min-h-screen md:h-screen flex flex-col md:flex-row overflow-hidden relative z-10">
 
-  {# Left: auth pane — fixed height, form always visible in viewport #}
-  <div class="w-96 flex-shrink-0 h-full flex flex-col justify-center px-10 bg-white/90 backdrop-blur-sm border-r border-gray-100 overflow-y-auto">
+  {# Left: auth pane #}
+  <div class="w-full md:w-96 md:flex-shrink-0 md:h-full flex flex-col justify-center px-8 py-10 md:px-10 bg-white/90 backdrop-blur-sm md:border-r border-gray-100 md:overflow-y-auto">
     <div class="mb-8">
       <a href="{{ url_for('auth.login') }}" class="flex items-center gap-2 mb-1">
         <div class="flex flex-col gap-0.5">
@@ -198,8 +219,8 @@
     </div>
   </div>
 
-  {# Right: about content — independently scrollable #}
-  <div class="flex-1 h-full overflow-y-auto px-10 py-10">
+  {# Right: about content — desktop only #}
+  <div class="hidden md:block flex-1 h-full overflow-y-auto px-10 py-10">
     <div class="max-w-2xl">
       <h2 class="text-xl font-bold text-gray-900 mb-6">About Stacks</h2>
       {% include 'boards/_about_content.html' %}
