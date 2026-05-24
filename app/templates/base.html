@@ -219,8 +219,8 @@
     </div>
   </div>
 
-  {# Right: about content — desktop only #}
-  <div class="hidden md:block flex-1 h-full overflow-y-auto px-10 py-10">
+  {# Right: about content — stacks below form on mobile, side panel on desktop #}
+  <div class="flex-1 md:h-full overflow-y-auto px-8 py-8 md:px-10 md:py-10 border-t md:border-t-0 md:border-l border-gray-100">
     <div class="max-w-2xl">
       <h2 class="text-xl font-bold text-gray-900 mb-6">About Stacks</h2>
       {% include 'boards/_about_content.html' %}
