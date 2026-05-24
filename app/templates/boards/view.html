@@ -247,13 +247,13 @@
                      @change="toggleAll($event.target.checked)"
                      class="cursor-pointer rounded border-gray-300 focus:ring-brutal-blue">
             </th>
-            <th class="no-drag text-left px-4 py-3 w-72 sticky left-10 z-30 bg-gray-50">
+            <th class="no-drag text-left px-4 py-3 w-40 sm:w-72 sticky left-10 z-30 bg-gray-50">
               <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Item</span>
             </th>
 
             {% for col in columns %}
             <th data-col-id="{{ col.id }}"
-                class="text-left px-3 py-2 min-w-[160px] group/hdr"
+                class="text-left px-3 py-2 min-w-[130px] sm:min-w-[160px] group/hdr"
                 x-data='colHeader({ boardId: {{ board.id }}, colId: {{ col.id }}, name: {{ col.name | tojson }} })'>
               <div class="flex items-center gap-1.5">
                 <span class="col-drag-handle cursor-grab text-gray-300 hover:text-gray-400 flex-shrink-0 select-none" title="Drag to reorder">
@@ -495,7 +495,7 @@
             </td>
 
             {# Item name — click opens detail panel #}
-            <td class="col-name px-4 py-1.5 sticky left-10 bg-white group-hover/row:bg-rose-50/50 z-10 transition-colors w-72"
+            <td class="col-name px-3 sm:px-4 py-1.5 sticky left-10 bg-white group-hover/row:bg-rose-50/50 z-10 transition-colors w-40 sm:w-72"
                 x-data='nameCell({ boardId: {{ board.id }}, itemId: {{ item.id }}, val: {{ item.name | tojson }} })'>
               <div @click="$dispatch('item-panel-open', { itemId: {{ item.id }} })"
                    class="cursor-pointer text-gray-900 font-medium py-1 min-h-[1.75rem] flex items-center hover:text-brutal-blue transition-colors"
@@ -505,14 +505,14 @@
             {# Custom column cells #}
             {% for col in columns %}
             {% set cv = cv_map.get(col.id, '') %}
-            <td data-col-id="{{ col.id }}" class="px-3 py-1.5 min-w-[160px]"
+            <td data-col-id="{{ col.id }}" class="px-2 sm:px-3 py-1.5 min-w-[130px] sm:min-w-[160px]"
 
               {% if col.col_type == 'status' %}
               x-data='statusCell({ boardId: {{ board.id }}, itemId: {{ item.id }}, colId: {{ col.id }}, val: {{ cv | tojson }} })'>
               <div class="py-0.5">
                 <select x-model="val" @change="save()"
                         :class="labelClass(val)"
-                        class="text-xs font-medium rounded px-2 py-0.5 w-28 text-center border-0 focus:outline-none focus:ring-1 focus:ring-[#0049b7] cursor-pointer">
+                        class="text-xs font-medium rounded px-1.5 py-0.5 w-full max-w-[112px] text-center border-0 focus:outline-none focus:ring-1 focus:ring-[#0049b7] cursor-pointer">
                   <option value="">—</option>
                   <option>Not started</option>
                   <option>Working on it</option>
@@ -526,7 +526,7 @@
               <div class="py-0.5">
                 <select x-model="val" @change="save()"
                         :class="labelClass(val)"
-                        class="text-xs font-medium rounded px-2 py-0.5 w-24 text-center border-0 focus:outline-none focus:ring-1 focus:ring-[#0049b7] cursor-pointer">
+                        class="text-xs font-medium rounded px-1.5 py-0.5 w-full max-w-[96px] text-center border-0 focus:outline-none focus:ring-1 focus:ring-[#0049b7] cursor-pointer">
                   <option value="">—</option>
                   <option>Low</option>
                   <option>Medium</option>
@@ -829,7 +829,7 @@
        x-transition:leave="transition ease-in duration-200"
        x-transition:leave-start="translate-x-0"
        x-transition:leave-end="translate-x-full"
-       class="fixed right-0 top-0 h-full w-[500px] bg-white shadow-2xl z-50 flex flex-col"
+       class="fixed right-0 top-0 h-full w-full sm:w-[500px] bg-white shadow-2xl z-50 flex flex-col"
        @keydown.escape.window="closePanel()"
        style="display:none;">
 
