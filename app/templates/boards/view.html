@@ -710,12 +710,13 @@
     Updated
   </div>
 
-  {# ── Add column modal ──────────────────────────────────────────────────── #}
+  {# ── Add column modal — teleported to <body> to escape overflow-hidden clipping on iOS #}
+  <template x-teleport="body">
   <div x-show="showAddCol"
        x-transition:enter="transition ease-out duration-150"
        x-transition:enter-start="opacity-0"
        x-transition:enter-end="opacity-100"
-       class="fixed inset-0 z-50 flex items-center justify-center px-4"
+       class="fixed inset-0 z-[200] flex items-center justify-center px-4"
        @keydown.escape.window="showAddCol = false"
        style="display: none;">
     <div class="absolute inset-0 bg-black/40" @click="showAddCol = false"></div>
@@ -753,13 +754,15 @@
       </div>
     </div>
   </div>
+  </template>
 
-  {# ── Add group modal ───────────────────────────────────────────────────── #}
+  {# ── Add group modal — teleported to <body> #}
+  <template x-teleport="body">
   <div x-show="showAddGroup"
        x-transition:enter="transition ease-out duration-150"
        x-transition:enter-start="opacity-0"
        x-transition:enter-end="opacity-100"
-       class="fixed inset-0 z-50 flex items-center justify-center px-4"
+       class="fixed inset-0 z-[200] flex items-center justify-center px-4"
        @keydown.escape.window="showAddGroup = false"
        style="display: none;">
     <div class="absolute inset-0 bg-black/40" @click="showAddGroup = false"></div>
@@ -814,8 +817,11 @@
       </div>
     </div>
   </div>
+  </template>
 
-  {# ── Item detail panel ────────────────────────────────────────────────── #}
+  {# ── Item detail panel — teleported to <body> #}
+  <template x-teleport="body">
+  <div>
 
   {# Dim overlay #}
   <div x-show="panelOpen"
@@ -1007,6 +1013,9 @@
     </template>
 
   </div>
+
+  </div>
+  </template>
 
 </div>
 
