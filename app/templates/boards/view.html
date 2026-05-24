@@ -105,33 +105,33 @@
      ">
 
   {# ── Board header ─────────────────────────────────────────────────────── #}
-  <div class="px-4 sm:px-8 py-4 border-b border-gray-200 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 flex-shrink-0">
-    <div class="flex items-center gap-3">
-      <a href="{{ url_for('boards.index') }}"
-         class="text-gray-400 hover:text-gray-600 transition-colors">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-        </svg>
-      </a>
-      <div class="flex items-center gap-2">
-        <div class="w-2.5 h-6 rounded-sm flex-shrink-0" style="background-color: {{ board.color }};"></div>
-        <h1 class="text-xl font-bold text-gray-900">{{ board.name }}</h1>
-        <span class="text-sm text-gray-400 font-normal">
-          {% set total = namespace(n=0) %}
-          {% for g in groups %}{% set total.n = total.n + g.items|length %}{% endfor %}
-          {{ total.n }} item{% if total.n != 1 %}s{% endif %}
-        </span>
-      </div>
+  <div class="px-4 sm:px-8 py-3 sm:py-4 border-b border-gray-200 bg-white flex flex-wrap items-center gap-x-3 gap-y-2 flex-shrink-0">
+    {# Back arrow — stays on row 1 #}
+    <a href="{{ url_for('boards.index') }}"
+       class="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+    </a>
+    {# Title — flex-1 fills remaining row 1 space before ⋮ #}
+    <div class="flex items-center gap-2 flex-1 min-w-0">
+      <div class="w-2.5 h-6 rounded-sm flex-shrink-0" style="background-color: {{ board.color }};"></div>
+      <h1 class="text-lg sm:text-xl font-bold text-gray-900 truncate">{{ board.name }}</h1>
+      <span class="text-sm text-gray-400 font-normal hidden sm:inline flex-shrink-0">
+        {% set total = namespace(n=0) %}
+        {% for g in groups %}{% set total.n = total.n + g.items|length %}{% endfor %}
+        {{ total.n }} item{% if total.n != 1 %}s{% endif %}
+      </span>
     </div>
-    {# Search bar #}
-    <div class="relative">
+    {# Search — wraps to its own full-width row on mobile, inline on desktop #}
+    <div class="relative order-last w-full sm:w-auto sm:order-none">
       <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none"
            fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
       </svg>
       <input x-model="search" type="text" placeholder="Search items…"
-             class="pl-8 pr-7 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#0049b7] focus:ring-1 focus:ring-[#0049b7] w-52 bg-white placeholder-gray-400 transition-all"
+             class="pl-8 pr-7 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#0049b7] focus:ring-1 focus:ring-[#0049b7] w-full sm:w-52 bg-white placeholder-gray-400 transition-all"
              @keydown.escape="search = ''">
       <button x-show="search" @click="search = ''"
               class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
@@ -509,14 +509,10 @@
 
               {% if col.col_type == 'status' %}
               x-data='statusCell({ boardId: {{ board.id }}, itemId: {{ item.id }}, colId: {{ col.id }}, val: {{ cv | tojson }} })'>
-              <div x-show="!editing" @click="startEdit()" class="cursor-pointer py-0.5">
-                <span :class="labelClass(val)" class="inline-flex items-center justify-center px-2.5 py-0.5 rounded text-xs font-medium w-28 text-center">
-                  <span x-text="val || '—'"></span>
-                </span>
-              </div>
-              <div x-show="editing">
-                <select x-ref="sel" x-model="val" @change="save()" @blur="editing = false"
-                        class="text-xs border border-[#0049b7] rounded px-1 py-1 focus:outline-none w-full bg-white">
+              <div class="py-0.5">
+                <select x-model="val" @change="save()"
+                        :class="labelClass(val)"
+                        class="text-xs font-medium rounded px-2 py-0.5 w-28 text-center border-0 focus:outline-none focus:ring-1 focus:ring-[#0049b7] cursor-pointer">
                   <option value="">—</option>
                   <option>Not started</option>
                   <option>Working on it</option>
@@ -527,14 +523,10 @@
 
               {% elif col.col_type == 'priority' %}
               x-data='priorityCell({ boardId: {{ board.id }}, itemId: {{ item.id }}, colId: {{ col.id }}, val: {{ cv | tojson }} })'>
-              <div x-show="!editing" @click="startEdit()" class="cursor-pointer py-0.5">
-                <span :class="labelClass(val)" class="inline-flex items-center justify-center px-2.5 py-0.5 rounded text-xs font-medium w-20 text-center">
-                  <span x-text="val || '—'"></span>
-                </span>
-              </div>
-              <div x-show="editing">
-                <select x-ref="sel" x-model="val" @change="save()" @blur="editing = false"
-                        class="text-xs border border-[#0049b7] rounded px-1 py-1 focus:outline-none w-full bg-white">
+              <div class="py-0.5">
+                <select x-model="val" @change="save()"
+                        :class="labelClass(val)"
+                        class="text-xs font-medium rounded px-2 py-0.5 w-24 text-center border-0 focus:outline-none focus:ring-1 focus:ring-[#0049b7] cursor-pointer">
                   <option value="">—</option>
                   <option>Low</option>
                   <option>Medium</option>
@@ -890,38 +882,28 @@
 
                       {# Status #}
                       <template x-if="colType === 'status'">
-                        <div>
-                          <div x-show="!editing" @click="startEdit()" class="cursor-pointer inline-block">
-                            <span :class="statusClass(val)"
-                                  class="inline-flex items-center justify-center px-3 py-1 rounded text-xs font-semibold min-w-[6rem]"
-                                  x-text="val || '—'"></span>
-                          </div>
-                          <select x-show="editing" x-model="val" @change="save()" @blur="editing=false"
-                                  class="text-sm border border-[#0049b7] rounded-lg px-2 py-1.5 focus:outline-none bg-white text-gray-800"
-                                  style="display:none;">
-                            <option value="">—</option>
-                            <option>Not started</option><option>Working on it</option>
-                            <option>Stuck</option><option>Done</option>
-                          </select>
-                        </div>
+                        <select x-model="val" @change="save()"
+                                :class="statusClass(val)"
+                                class="text-sm font-semibold rounded-lg px-3 py-1 min-w-[6rem] text-center border-0 focus:outline-none focus:ring-1 focus:ring-[#0049b7] cursor-pointer">
+                          <option value="">—</option>
+                          <option>Not started</option>
+                          <option>Working on it</option>
+                          <option>Stuck</option>
+                          <option>Done</option>
+                        </select>
                       </template>
 
                       {# Priority #}
                       <template x-if="colType === 'priority'">
-                        <div>
-                          <div x-show="!editing" @click="startEdit()" class="cursor-pointer inline-block">
-                            <span :class="priorityClass(val)"
-                                  class="inline-flex items-center justify-center px-3 py-1 rounded text-xs font-semibold min-w-[5rem]"
-                                  x-text="val || '—'"></span>
-                          </div>
-                          <select x-show="editing" x-model="val" @change="save()" @blur="editing=false"
-                                  class="text-sm border border-[#0049b7] rounded-lg px-2 py-1.5 focus:outline-none bg-white text-gray-800"
-                                  style="display:none;">
-                            <option value="">—</option>
-                            <option>Low</option><option>Medium</option>
-                            <option>High</option><option>Critical</option>
-                          </select>
-                        </div>
+                        <select x-model="val" @change="save()"
+                                :class="priorityClass(val)"
+                                class="text-sm font-semibold rounded-lg px-3 py-1 min-w-[5rem] text-center border-0 focus:outline-none focus:ring-1 focus:ring-[#0049b7] cursor-pointer">
+                          <option value="">—</option>
+                          <option>Low</option>
+                          <option>Medium</option>
+                          <option>High</option>
+                          <option>Critical</option>
+                        </select>
                       </template>
 
                       {# Person #}
@@ -1117,15 +1099,13 @@ function numberCell({ boardId, itemId, colId, val }) {
 
 function statusCell({ boardId, itemId, colId, val }) {
   return {
-    editing: false, val,
-    startEdit() { this.editing = true; this.$nextTick(() => this.$refs.sel.focus()) },
+    val,
     async save() {
       const r = await apiFetch(`/boards/${boardId}/items/${itemId}/cells/${colId}`, 'PATCH', { value: this.val })
       if (r.ok) {
         window.dispatchEvent(new CustomEvent('cell-saved'))
         await autoMoveItemToGroup(boardId, itemId, this.val)
       }
-      this.editing = false
     },
     labelClass(v) {
       return { 'Done': 'bg-green-100 text-green-700', 'Working on it': 'bg-blue-100 text-blue-700',
@@ -1136,15 +1116,13 @@ function statusCell({ boardId, itemId, colId, val }) {
 
 function priorityCell({ boardId, itemId, colId, val }) {
   return {
-    editing: false, val,
-    startEdit() { this.editing = true; this.$nextTick(() => this.$refs.sel.focus()) },
+    val,
     async save() {
       const r = await apiFetch(`/boards/${boardId}/items/${itemId}/cells/${colId}`, 'PATCH', { value: this.val })
       if (r.ok) {
         window.dispatchEvent(new CustomEvent('cell-saved'))
         await autoMoveItemToGroup(boardId, itemId, this.val)
       }
-      this.editing = false
     },
     labelClass(v) {
       return { 'Low': 'bg-gray-100 text-gray-500', 'Medium': 'bg-yellow-100 text-yellow-700',
