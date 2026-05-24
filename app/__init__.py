@@ -1,9 +1,17 @@
+import logging
+import sys
 from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_bcrypt import Bcrypt
 from flask_wtf.csrf import CSRFProtect
+
+logging.basicConfig(
+    stream=sys.stdout,
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s %(name)s %(message)s',
+)
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -40,12 +48,17 @@ def create_app(config_object=None):
     # Import models so Flask-Migrate can detect them
     from app import models  # noqa: F401
 
+    @app.errorhandler(403)
+    def forbidden(e):
+        return render_template('errors/403.html'), 403
+
     @app.errorhandler(404)
     def not_found(e):
         return render_template('errors/404.html'), 404
 
     @app.errorhandler(500)
     def server_error(e):
+        app.logger.error('Unhandled exception', exc_info=True)
         return render_template('errors/500.html'), 500
 
     return app

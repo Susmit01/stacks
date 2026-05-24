@@ -2,18 +2,18 @@
 {% block title %}My Boards — Stacks{% endblock %}
 
 {% block content %}
-<div class="px-8 py-8" x-data="{ modalOpen: false }">
+<div class="px-8 py-8" x-data="{ modalOpen: false, selectedColor: '{{ colors[0] }}' }">
 
   {# Page header #}
   <div class="flex items-center justify-between mb-8">
     <h1 class="text-2xl font-bold text-gray-900">My Boards</h1>
     <button @click="modalOpen = true"
       class="inline-flex items-center gap-2 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
-      style="background-color:#0049b7;" onmouseover="this.style.backgroundColor='#003d99'" onmouseout="this.style.backgroundColor='#0049b7'">
+      style="background-color:#ff1d58;" onmouseover="this.style.backgroundColor='#e0164e'" onmouseout="this.style.backgroundColor='#ff1d58'">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
       </svg>
-      New Board
+      Create new board
     </button>
   </div>
 
@@ -30,7 +30,7 @@
             {{ board.name }}
           </h2>
           <p class="text-sm text-gray-500 mb-0.5">
-            {{ board.items | length }} item{% if board.items | length != 1 %}s{% endif %}
+            {{ item_counts[board.id] }} item{% if item_counts[board.id] != 1 %}s{% endif %}
           </p>
           <p class="text-xs text-gray-400">
             Updated {{ board.updated_at.strftime('%d %b %Y') }}
@@ -75,81 +75,17 @@
     <h2 class="text-xl font-bold text-gray-900 mb-2">No boards yet</h2>
     <p class="text-sm text-gray-500 mb-6">Create your first board to start tracking work.</p>
     <button @click="modalOpen = true"
-      class="text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors"
-      style="background-color:#0049b7;" onmouseover="this.style.backgroundColor='#003d99'" onmouseout="this.style.backgroundColor='#0049b7'">
-      Create board
+      class="inline-flex items-center gap-2 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors"
+      style="background-color:#ff1d58;" onmouseover="this.style.backgroundColor='#e0164e'" onmouseout="this.style.backgroundColor='#ff1d58'">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      Create new board
     </button>
   </div>
   {% endif %}
 
+  {% include 'boards/_create_board_modal.html' %}
+
 </div>
-
-{# ─── Create Board Modal ─── #}
-<div x-show="modalOpen"
-     x-transition:enter="transition ease-out duration-200"
-     x-transition:enter-start="opacity-0"
-     x-transition:enter-end="opacity-100"
-     x-transition:leave="transition ease-in duration-150"
-     x-transition:leave-start="opacity-100"
-     x-transition:leave-end="opacity-0"
-     class="fixed inset-0 z-50 flex items-center justify-center px-4"
-     @keydown.escape.window="modalOpen = false"
-     style="display: none;">
-
-  {# Backdrop #}
-  <div class="absolute inset-0 bg-black/40" @click="modalOpen = false"></div>
-
-  {# Dialog #}
-  <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6"
-       x-data="{ selectedColor: '{{ colors[0] }}' }"
-       @click.stop>
-    <div class="flex items-center justify-between mb-5">
-      <h2 class="text-lg font-bold text-gray-900">New board</h2>
-      <button @click="modalOpen = false" class="text-gray-400 hover:text-gray-600">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
-      </button>
-    </div>
-
-    <form method="POST" action="{{ url_for('boards.create_board') }}" @submit="modalOpen = false">
-      {{ form.hidden_tag() }}
-
-      <div class="mb-5">
-        {{ form.name.label(class="block text-sm font-medium text-gray-700 mb-1") }}
-        {{ form.name(class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brutal-blue",
-                     placeholder="e.g. Q3 Campaign", required=true, autofocus=true) }}
-      </div>
-
-      <div class="mb-6">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Colour</label>
-        <div class="flex gap-2 flex-wrap">
-          {% for color in colors %}
-          <button type="button"
-            @click="selectedColor = '{{ color }}'"
-            class="w-8 h-8 rounded-full transition-transform hover:scale-110 focus:outline-none"
-            :class="selectedColor === '{{ color }}' ? 'ring-2 ring-offset-2 ring-gray-500 scale-110' : ''"
-            style="background-color: {{ color }};"
-            title="{{ color }}">
-          </button>
-          {% endfor %}
-        </div>
-        <input type="hidden" name="color" :value="selectedColor">
-      </div>
-
-      <div class="flex gap-3 justify-end">
-        <button type="button" @click="modalOpen = false"
-          class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 rounded-lg hover:bg-gray-100 transition-colors">
-          Cancel
-        </button>
-        <button type="submit"
-          class="px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors"
-          style="background-color:#0049b7;" onmouseover="this.style.backgroundColor='#003d99'" onmouseout="this.style.backgroundColor='#0049b7'">
-          Create board
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
-
 {% endblock %}

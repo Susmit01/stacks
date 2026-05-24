@@ -9,7 +9,7 @@ from app.models import User
 @auth_bp.route('/signup', methods=['GET', 'POST'])
 def signup():
     if current_user.is_authenticated:
-        return redirect(url_for('boards.index'))
+        return redirect(url_for('boards.dashboard'))
     form = SignupForm()
     if form.validate_on_submit():
         pw_hash = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
@@ -21,20 +21,20 @@ def signup():
         db.session.add(user)
         db.session.commit()
         login_user(user)
-        return redirect(url_for('boards.index'))
+        return redirect(url_for('boards.dashboard'))
     return render_template('auth/signup.html', form=form)
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('boards.index'))
+        return redirect(url_for('boards.dashboard'))
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data.lower()).first()
         if user and bcrypt.check_password_hash(user.password_hash, form.password.data):
             login_user(user)
-            return redirect(url_for('boards.index'))
+            return redirect(url_for('boards.dashboard'))
         flash('Invalid email or password.', 'error')
     return render_template('auth/login.html', form=form)
 

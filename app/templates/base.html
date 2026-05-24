@@ -38,28 +38,56 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
 </head>
-<body class="bg-gray-50 text-gray-900 antialiased font-sans">
+<body class="text-gray-900 antialiased font-sans"
+      style="background: linear-gradient(160deg, #fff0f3 0%, #f0f4ff 60%, #e6fbff 100%); min-height: 100vh;">
+
+{# Decorative blobs — fixed behind all pages #}
+<div class="fixed -top-32 -right-32 w-[30rem] h-[30rem] rounded-full pointer-events-none"
+     style="background-color:#f75990; opacity:0.18; z-index:0;"></div>
+<div class="fixed -bottom-32 -left-32 w-96 h-96 rounded-full pointer-events-none"
+     style="background-color:#00ddff; opacity:0.15; z-index:0;"></div>
+<div class="fixed top-1/3 right-1/4 w-56 h-56 rounded-full pointer-events-none"
+     style="background-color:#fff685; opacity:0.35; z-index:0;"></div>
 
 {% if current_user.is_authenticated %}
 {# ─── Authenticated layout: sidebar + main ─── #}
-<div class="flex h-screen overflow-hidden">
+<div class="flex h-screen overflow-hidden relative z-10">
 
   {# Sidebar #}
   <aside class="w-60 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
     <div class="px-5 py-4 border-b border-gray-100">
-      <a href="{{ url_for('boards.index') }}" class="flex items-center gap-2">
+      <a href="{{ url_for('boards.dashboard') }}" class="flex items-center gap-2">
         <div class="flex flex-col gap-0.5 flex-shrink-0">
           <div class="w-5 h-2 rounded-sm" style="background-color:#ff1d58;"></div>
           <div class="w-5 h-2 rounded-sm opacity-50" style="background-color:#ff1d58;"></div>
         </div>
         <span class="text-lg font-bold tracking-tight" style="color:#ff1d58;">Stacks</span>
       </a>
-      <p class="text-xs italic text-gray-400 mt-0.5 ml-7">— By Susmita Mishra</p>
+      <p class="text-xs italic text-gray-400 mt-0.5 ml-7">- By Susmita Mishra × Claude Code</p>
     </div>
 
     <nav class="flex-1 px-3 py-4 space-y-1">
+      <a href="{{ url_for('boards.about') }}"
+         class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                {% if request.endpoint == 'boards.about' %}bg-red-50 text-yass-queen{% else %}text-gray-700 hover:bg-red-50 hover:text-yass-queen{% endif %}">
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        About Stacks
+      </a>
+      <a href="{{ url_for('boards.dashboard') }}"
+         class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                {% if request.endpoint == 'boards.dashboard' %}bg-red-50 text-yass-queen{% else %}text-gray-700 hover:bg-red-50 hover:text-yass-queen{% endif %}">
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+        </svg>
+        Dashboard
+      </a>
       <a href="{{ url_for('boards.index') }}"
-         class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-yass-queen transition-colors">
+         class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                {% if request.endpoint in ['boards.index', 'boards.view_board', 'boards.view_board_item'] %}bg-red-50 text-yass-queen{% else %}text-gray-700 hover:bg-red-50 hover:text-yass-queen{% endif %}">
         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10-3a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1v-7z"/>
@@ -133,49 +161,51 @@
 </div>
 
 {% else %}
-{# ─── Unauthenticated layout: branded background ─── #}
-<div class="min-h-screen flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden"
-     style="background: linear-gradient(160deg, #fff0f3 0%, #f0f4ff 60%, #e6fbff 100%);">
+{# ─── Unauthenticated layout: two-column, both panes locked to viewport height ─── #}
+<div class="h-screen flex overflow-hidden relative z-10">
 
-  {# Decorative blobs #}
-  <div class="absolute -top-32 -right-32 w-[30rem] h-[30rem] rounded-full pointer-events-none"
-       style="background-color:#f75990; opacity:0.22;"></div>
-  <div class="absolute -bottom-32 -left-32 w-96 h-96 rounded-full pointer-events-none"
-       style="background-color:#00ddff; opacity:0.18;"></div>
-  <div class="absolute top-1/3 right-1/4 w-56 h-56 rounded-full pointer-events-none"
-       style="background-color:#fff685; opacity:0.40;"></div>
+  {# Left: auth pane — fixed height, form always visible in viewport #}
+  <div class="w-96 flex-shrink-0 h-full flex flex-col justify-center px-10 bg-white/90 backdrop-blur-sm border-r border-gray-100 overflow-y-auto">
+    <div class="mb-8">
+      <a href="{{ url_for('auth.login') }}" class="flex items-center gap-2 mb-1">
+        <div class="flex flex-col gap-0.5">
+          <div class="w-5 h-2 rounded-sm" style="background-color:#ff1d58;"></div>
+          <div class="w-5 h-2 rounded-sm opacity-50" style="background-color:#ff1d58;"></div>
+        </div>
+        <span class="text-2xl font-bold tracking-tight" style="color:#ff1d58;">Stacks</span>
+      </a>
+      <p class="text-xs italic text-gray-400">by Susmita Mishra × Claude Code</p>
+    </div>
 
-  {# Logo + tagline #}
-  <div class="relative z-10 flex flex-col items-center mb-8">
-    <a href="{{ url_for('auth.login') }}" class="flex items-center gap-2 mb-0.5">
-      <div class="flex flex-col gap-0.5">
-        <div class="w-5 h-2 rounded-sm" style="background-color:#ff1d58;"></div>
-        <div class="w-5 h-2 rounded-sm opacity-50" style="background-color:#ff1d58;"></div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="w-full mb-4">
+      {% for category, message in messages %}
+      {% if category in ['error', 'info'] %}
+      <div class="px-4 py-3 rounded-lg text-sm
+        {% if category == 'error' %}bg-red-50 text-red-700 border border-red-200
+        {% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
+        {{ message }}
       </div>
-      <span class="text-2xl font-bold tracking-tight" style="color:#ff1d58;">Stacks</span>
-    </a>
-    <p class="text-xs italic text-gray-500">— By Susmita Mishra</p>
-  </div>
-
-  {% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-  <div class="w-full max-w-sm mb-4 relative z-10">
-    {% for category, message in messages %}
-    {% if category in ['error', 'info'] %}
-    <div class="px-4 py-3 rounded-lg text-sm
-      {% if category == 'error' %}bg-red-50 text-red-700 border border-red-200
-      {% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
-      {{ message }}
+      {% endif %}
+      {% endfor %}
     </div>
     {% endif %}
-    {% endfor %}
-  </div>
-  {% endif %}
-  {% endwith %}
+    {% endwith %}
 
-  <div class="relative z-10">
-    {% block auth_content %}{% endblock %}
+    <div class="w-full">
+      {% block auth_content %}{% endblock %}
+    </div>
   </div>
+
+  {# Right: about content — independently scrollable #}
+  <div class="flex-1 h-full overflow-y-auto px-10 py-10">
+    <div class="max-w-2xl">
+      <h2 class="text-xl font-bold text-gray-900 mb-6">About Stacks</h2>
+      {% include 'boards/_about_content.html' %}
+    </div>
+  </div>
+
 </div>
 {% endif %}
 

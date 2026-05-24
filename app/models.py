@@ -32,10 +32,10 @@ class Board(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    items = db.relationship(
-        'Item', backref='board', lazy=True,
+    groups = db.relationship(
+        'Group', backref='board', lazy=True,
         cascade='all, delete-orphan',
-        order_by='Item.position'
+        order_by='Group.position'
     )
     columns = db.relationship(
         'Column', backref='board', lazy=True,
@@ -44,12 +44,45 @@ class Board(db.Model):
     )
 
 
+class Group(db.Model):
+    __tablename__ = 'groups'
+
+    GROUP_COLORS = [
+        '#0049b7',
+        '#ff1d58',
+        '#f75990',
+        '#00c875',
+        '#fdab3d',
+        '#7e3b8a',
+        '#00ddff',
+        '#ff642e',
+        '#9db0c8',
+        '#585e6a',
+    ]
+
+    id = db.Column(db.Integer, primary_key=True)
+    board_id = db.Column(db.Integer, db.ForeignKey('boards.id'), nullable=False)
+    name = db.Column(db.String(150), nullable=False, default='Items')
+    color = db.Column(db.String(7), nullable=False, default='#0049b7')
+    position = db.Column(db.Integer, nullable=False, default=0)
+    collapsed = db.Column(db.Boolean, nullable=False, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    items = db.relationship(
+        'Item', backref='group', lazy=True,
+        cascade='all, delete-orphan',
+        order_by='Item.position'
+    )
+
+
 class Item(db.Model):
     __tablename__ = 'items'
 
     id = db.Column(db.Integer, primary_key=True)
     board_id = db.Column(db.Integer, db.ForeignKey('boards.id'), nullable=False)
+    group_id = db.Column(db.Integer, db.ForeignKey('groups.id'), nullable=True)
     name = db.Column(db.String(300), nullable=False)
+    description = db.Column(db.Text, nullable=True, default='')
     position = db.Column(db.Integer, nullable=False, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -12,3 +12,5 @@ instance/
 dist/
 build/
 .DS_Store
+.vscode/
+*.sqlite
